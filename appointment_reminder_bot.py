@@ -192,9 +192,9 @@ class AppointmentBot:
                 print("Invalid option.")
 
 
-
 # -------------------- Entry Point --------------------
 
 if __name__ == "__main__":
     bot = AppointmentBot()
     bot.run()
+
