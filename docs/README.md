@@ -12,14 +12,14 @@ FEATURES
 
 HOW IT WORKS
 1. Open the bot → Welcome message appears  
-2. Type `schedule` → Bot guides you through:
+2. Type 'schedule → Bot guides you through:
    - Step 1: Choose specialty  
    - Step 2: Enter doctor name  
    - Step 3: Enter hospital name  
    - Step 4: Enter date (YYYY-MM-DD)  
    - Step 5: Enter time (HH:MM)  
-3. Type `view` → Bot shows all scheduled appointments  
-4. Type `reminder` → Bot shows appointments for tomorrow  
+3. Type 'view' → Bot shows all scheduled appointments  
+4. Type 'reminder' → Bot shows appointments for tomorrow  
 
 TECHNICAL STACK
 - Python 3
