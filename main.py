@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 DATA_FILE = "appointments.json"
 
+#STORAGE
 class StorageManager:
     def __init__(self, filename):
         self.filename = filename
@@ -31,164 +32,264 @@ class StorageManager:
     def get_appointments(self):
         return self.data
 
+
+#  REMINDER 
 class ReminderEngine:
     def __init__(self, storage):
         self.storage = storage
 
-    def get_tomorrow(self):
+    def get_today_and_tomorrow(self):
         today = datetime.now().date()
-        results = []
+        tomorrow = today + timedelta(days=1)
+
+        today_list = []
+        tomorrow_list = []
+
         for appt in self.storage.get_appointments():
             try:
-                appt_date = datetime.strptime(appt["dt"], "%Y-%m-%d").date()
-                if appt_date == today + timedelta(days=1):
-                    results.append(appt)
-            except: continue
-        return results
+                d = datetime.strptime(appt.get("dt", ""), "%Y-%m-%d").date()
+                if d == today:
+                    today_list.append(appt)
+                elif d == tomorrow:
+                    tomorrow_list.append(appt)
+            except:
+                continue
 
+        return today_list, tomorrow_list
+
+
+#  UI 
 class ChatBotApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Appointment Reminder Bot ")
-        self.root.geometry("500x650")
-        self.root.configure(bg="white")
+        self.root.title("Smart Appointment Assistant")
+        self.root.geometry("520x720")
+        self.root.configure(bg="#0f172a")
 
         self.storage = StorageManager(DATA_FILE)
         self.reminder = ReminderEngine(self.storage)
-        self.specialties = ["General Medicine", "Cardiology", "Dermatology", "Orthopedics", "Neurology"]
+
+        self.specialties = [
+            "General Medicine",
+            "Cardiology",
+            "Dermatology",
+            "Orthopedics",
+            "Neurology"
+        ]
 
         self.flow = None
         self.step = 0
         self.temp = {}
 
-        # Chat container
-        self.canvas = Canvas(root, bg="white", highlightthickness=0)
-        self.frame = Frame(self.canvas, bg="white")
-        self.scroll = Scrollbar(root, command=self.canvas.yview)
+        #  SCROLLABLE CHAT
+        container = Frame(root, bg="#0f172a")
+        container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.canvas = Canvas(container, bg="#0f172a", highlightthickness=0)
+        self.frame = Frame(self.canvas, bg="#0f172a")
+        self.scroll = Scrollbar(container, command=self.canvas.yview)
+
         self.canvas.configure(yscrollcommand=self.scroll.set)
         self.scroll.pack(side="right", fill="y")
-        self.canvas.pack(fill="both", expand=True)
-        self.canvas.create_window((0,0), window=self.frame, anchor="nw")
-        self.frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
 
-        # Input
-        self.bottom = Frame(root, bg="light blue")
-        self.bottom.pack(fill="x")
-        self.entry = Entry(self.bottom, font=("Arial", 13))
-        self.entry.pack(side="left", fill="x", expand=True, padx=10, pady=10)
+        self.frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.bind_all(
+            "<MouseWheel>",
+            lambda e: self.canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        )
+
+        # INPUT
+        bottom = Frame(root, bg="#0f172a")
+        bottom.pack(fill="x", padx=10, pady=10)
+
+        self.entry = Entry(bottom, font=("Segoe UI", 12),
+                           bg="#1e293b", fg="white",
+                           insertbackground="white", relief="flat")
+        self.entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.entry.bind("<Return>", self.on_enter)
-        self.send_btn = Button(self.bottom, text="Send", bg="blue", fg="white", font=("Arial",12), command=self.on_enter)
-        self.send_btn.pack(side="right", padx=10, pady=10)
 
-        # Welcome
-        self.bot_message("Hello! I'm your Appointment Bot ")
-        self.bot_message("Type one of: schedule / view / reminder")
+        Button(bottom, text="Send", command=self.on_enter,
+               bg="#38bdf8", fg="black",
+               font=("Segoe UI", 10, "bold"),
+               relief="flat", padx=15).pack(side="right")
 
-    def user_message(self, text):
-        msg = Frame(self.frame, bg="white")
-        Label(msg, text=text, bg="light blue", fg="black", font=("Arial",12), wraplength=350, justify="left").pack(padx=10, pady=5, anchor="e")
-        msg.pack(anchor="e", pady=2, padx=10)
+        self.bot("Hello! I manage your appointments.")
+        self.bot("Type: schedule OR view OR reminder")
+
+    #  AUTO SCROLL 
+    def scroll_bottom(self):
+        self.root.update_idletasks()
         self.canvas.yview_moveto(1)
 
-    def bot_message(self, text):
-        msg = Frame(self.frame, bg="white")
-        Label(msg, text=text, bg="white", fg="blue", font=("Arial",12), wraplength=350, justify="left").pack(padx=10, pady=5, anchor="w")
-        msg.pack(anchor="w", pady=2, padx=10)
-        self.canvas.yview_moveto(1)
+    #  CHAT 
+    def user(self, text):
+        Label(self.frame, text=text, bg="#2563eb", fg="white",
+              font=("Segoe UI", 11), wraplength=320,
+              padx=12, pady=8).pack(anchor="e", pady=6)
+        self.scroll_bottom()
 
+    def bot(self, text):
+        Label(self.frame, text=text, bg="#1e293b", fg="white",
+              font=("Segoe UI", 11), wraplength=320,
+              padx=12, pady=8, justify="left").pack(anchor="w", pady=6)
+        self.scroll_bottom()
+
+    # CARD
+    def appointment_card(self, a):
+        card = Frame(self.frame, bg="#111827",
+                     highlightbackground="#334155",
+                     highlightthickness=1, padx=12, pady=8)
+
+        Label(card, text=f"{a['dt']}   {a['tm']}",
+              font=("Segoe UI", 11, "bold"),
+              fg="#38bdf8", bg="#111827").pack(anchor="w")
+
+        Label(card, text=f"Dr {a['doc']}  |  {a['spec']}",
+              fg="white", bg="#111827").pack(anchor="w", pady=2)
+
+        Label(card, text=a['hos'],
+              fg="#cbd5f5", bg="#111827").pack(anchor="w")
+
+        card.pack(fill="x", pady=6)
+        self.scroll_bottom()
+
+    #  INPUT 
     def on_enter(self, event=None):
         text = self.entry.get().strip()
-        if not text: return
-        self.user_message(text)
+        if not text:
+            return
+        self.user(text)
         self.entry.delete(0, "end")
-        self.process_command(text)
+        self.process(text.lower(), text)
 
-    def process_command(self, cmd):
-        cmd_lower = cmd.strip().lower()
+    # COMMAND 
+    def process(self, lower, original):
 
-        if self.flow == "schedule":
-            self.schedule_flow(cmd)
+        if "view" in lower:
+            self.show_appointments()
             return
 
-        if "schedule" in cmd_lower:
+        if "reminder" in lower:
+            self.show_reminders()
+            return
+
+        if self.flow == "schedule":
+            self.schedule_flow(original)
+            return
+
+        if "schedule" in lower:
             self.flow = "schedule"
             self.step = 1
             self.temp = {}
-            self.bot_message("Let's schedule your appointment.")
-            self.bot_message("Step 1: Choose specialty:\n" + ", ".join(self.specialties))
-        elif "view" in cmd_lower:
-            self.show_appointments()
-        elif "reminder" in cmd_lower:
-            self.show_reminders()
+            self.bot("Choose specialty:\n" + ", ".join(self.specialties))
         else:
-            self.bot_message("I didn't understand. Try: schedule / view / reminder")
+            self.bot("Type schedule / view / reminder")
 
+    # SCHEDULING
     def schedule_flow(self, text):
-        text_clean = text.strip()
+
         if self.step == 1:
-            matched = None
             for s in self.specialties:
-                if text_clean.lower() == s.lower():
-                    matched = s
-                    break
-            if not matched:
-                self.bot_message("Please choose a valid specialty:\n" + ", ".join(self.specialties))
-                return
-            self.temp["spec"] = matched
-            self.step = 2
-            self.bot_message("Step 2: Doctor name?")
+                if text.lower() == s.lower():
+                    self.temp["spec"] = s
+                    self.step = 2
+                    self.bot("Doctor name?")
+                    return
+            self.bot("Choose valid specialty")
+
         elif self.step == 2:
-            self.temp["doc"] = text_clean.title()
+            self.temp["doc"] = text.title()
             self.step = 3
-            self.bot_message("Step 3: Hospital name?")
+            self.bot("Hospital name?")
+
         elif self.step == 3:
-            self.temp["hos"] = text_clean.title()
+            self.temp["hos"] = text.title()
             self.step = 4
-            self.bot_message("Step 4: Date (YYYY-MM-DD)?")
+            self.bot("Date (YYYY-MM-DD)?")
+
         elif self.step == 4:
             try:
-                datetime.strptime(text_clean, "%Y-%m-%d")
-                self.temp["dt"] = text_clean
+                datetime.strptime(text, "%Y-%m-%d")
+                self.temp["dt"] = text
                 self.step = 5
-                self.bot_message("Step 5: Time (HH:MM)?")
+                self.bot("Time (HH:MM)?")
             except:
-                self.bot_message("Invalid date. Format: YYYY-MM-DD")
+                self.bot("Invalid date")
+
         elif self.step == 5:
             try:
-                datetime.strptime(text_clean, "%H:%M")
-                self.temp["tm"] = text_clean
-                self.storage.add_appointment(self.temp)
-                self.bot_message(f" Appointment scheduled with Dr. {self.temp['doc']} on {self.temp['dt']} at {self.temp['tm']}.")
+                datetime.strptime(text, "%H:%M")
+                self.temp["tm"] = text
+                self.storage.add_appointment(self.temp.copy())
+                self.bot("APPOINTMENT SCHEDULED ✔")
                 self.flow = None
                 self.step = 0
+                self.temp = {}
             except:
-                self.bot_message("Invalid time. Format: HH:MM")
+                self.bot("Invalid time")
 
+    # VIEW 
     def show_appointments(self):
+
+        self.storage.data = self.storage.load_data()
         appts = self.storage.get_appointments()
-        if not appts:
-            self.bot_message("No appointments found.")
-            return
-        out = "Your Appointments:\n"
+
+        valid = []
         for a in appts:
-            out += f"- {a['dt']} {a['tm']} : Dr. {a['doc']} ({a['spec']}) @ {a['hos']}\n"
-        self.bot_message(out)
+            try:
+                if all(k in a for k in ("dt","tm","doc","spec","hos")):
+                    datetime.strptime(a["dt"], "%Y-%m-%d")
+                    datetime.strptime(a["tm"], "%H:%M")
+                    valid.append(a)
+            except:
+                continue
 
-    def show_reminders(self):
-        tomorrow = self.reminder.get_tomorrow()
-        if not tomorrow:
-            self.bot_message("No appointments for tomorrow.")
+        if not valid:
+            self.bot("No appointments found")
             return
-        out = "Tomorrow's Appointments:\n"
-        for a in tomorrow:
-            out += f"- {a['dt']} {a['tm']} : Dr. {a['doc']} ({a['spec']}) @ {a['hos']}\n"
-        self.bot_message(out)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ChatBotApp(root)
-    root.mainloop()
+        valid.sort(
+            key=lambda a: datetime.strptime(
+                a["dt"]+" "+a["tm"], "%Y-%m-%d %H:%M"
+            )
+        )
 
+        self.bot("YOUR APPOINTMENTS")
+        for a in valid:
+            self.appointment_card(a)
 
+    # REMINDER 
+    def show_reminders(self):
 
+        self.storage.data = self.storage.load_data()
+        today, tomorrow = self.reminder.get_today_and_tomorrow()
 
+        today = today or []
+        tomorrow = tomorrow or []
+
+        if not today and not tomorrow:
+            self.bot("No upcoming appointments")
+            return
+
+        if today:
+            self.bot("TODAY")
+            for a in today:
+                if all(k in a for k in ("dt","tm","doc","spec","hos")):
+                    self.appointment_card(a)
+
+        if tomorrow:
+            self.bot("TOMORROW")
+            for a in tomorrow:
+                if all(k in a for k in ("dt","tm","doc","spec","hos")):
+                    self.appointment_card(a)
+
+# RUN
+root = tk.Tk()
+ChatBotApp(root)
+root.mainloop()
