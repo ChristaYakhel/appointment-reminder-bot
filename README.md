@@ -42,7 +42,7 @@ UI Renderer
 
 ** Prerequisites -Python 3.11 or higher
 
-**Installation
+**INSTALLATION
 
 git clone https://github.com/ChristaYakhel/appointment-reminder-bot.git
 cd appointment-reminder-bot
@@ -57,7 +57,8 @@ delete     - Cancel an appointment
 
 PROJECT STRUCTURE
 
-appointment-reminder-bot/
+appointment-reminder-bot
+
 ├── main.py
 
 ├── appointments.json
