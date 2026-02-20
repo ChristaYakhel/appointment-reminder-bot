@@ -45,7 +45,9 @@ UI Renderer
 **INSTALLATION
 
 git clone https://github.com/ChristaYakhel/appointment-reminder-bot.git
+
 cd appointment-reminder-bot
+
 python main.py
 
 **Usage
