@@ -1,8 +1,6 @@
 APPOINTMENT REMINDER BOT
 
-☆☆☆ A conversational appointment management system built with Python and Tkinter.
-Designed to simplify how users schedule and track medical appointments through 
-a clean, chat-based interface — no forms, no complexity. ☆☆☆
+☆☆☆ A conversational appointment management system built with Python and Tkinter. Designed to simplify how users schedule and track medical appointments through a clean, chat-based interface — no forms, no complexity.☆☆☆
 
 
 OVERVIEW
