@@ -59,7 +59,9 @@ PROJECT STRUCTURE
 
 appointment-reminder-bot/
 ├── main.py
+
 ├── appointments.json
+
 └── README.md
 
 
